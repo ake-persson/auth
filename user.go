@@ -3,7 +3,7 @@ package auth
 type User struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
-	EMail    string `json:"eMail"`
+	Mail     string `json:"mail"`
 	Groups   Groups `json:"groups"`
 }
 

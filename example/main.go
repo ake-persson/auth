@@ -30,7 +30,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := c.Login(*user, *pass); err != nil {
+	u, err := c.Login(*user, *pass)
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Printf("User: %+v", u)
 }
