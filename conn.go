@@ -6,7 +6,7 @@ import (
 )
 
 type Conn interface {
-	Login(user string, pass string) error
+	Login(user string, pass string) (*User, error)
 	Close() error
 }
 
