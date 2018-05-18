@@ -44,14 +44,34 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 	}
 
 	u.DN = entries[0].DN
-	for _, e := range entries[0].Attributes {
-		switch e.Name {
+	for _, a := range entries[0].Attributes {
+		switch a.Name {
 		case "cn":
-			u.Name = e.Values[0]
+			u.Name = a.Values[0]
 		case "mail":
-			u.Mail = e.Values[0]
+			u.Mail = a.Values[0]
 		}
 	}
+
+	entries, err = c.memberOf(c.base, u.DN, []string{"cn"})
+	if err != nil {
+		return nil, errors.Wrapf(err, "ldap search username: %s", user)
+	}
+
+	groups := auth.Groups{}
+	for _, e := range entries {
+		for _, a := range e.Attributes {
+			g := &auth.Group{
+				DN: e.DN,
+			}
+			switch a.Name {
+			case "cn":
+				g.Name = a.Values[0]
+			}
+			groups = append(groups, g)
+		}
+	}
+	u.Groups = groups
 
 	return u, nil
 }
@@ -76,8 +96,8 @@ func (c *conn) user(base string, user string, fields []string) ([]*ldap.Entry, e
 	return entries, nil
 }
 
-func (c *conn) memberOf(base string, dn string) ([]*ldap.Entry, error) {
-	entries, err := c.search(base, scopeSub, fmt.Sprintf("(&(member=%s))", dn), []string{"dn"})
+func (c *conn) memberOf(base string, dn string, fields []string) ([]*ldap.Entry, error) {
+	entries, err := c.search(base, scopeSub, fmt.Sprintf("(&(member=%s))", dn), fields)
 	if err != nil {
 		return nil, err
 	}

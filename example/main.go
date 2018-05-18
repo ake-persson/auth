@@ -35,5 +35,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("User: %+v", u)
+	fmt.Printf("DN: %s\n", u.DN)
+	fmt.Printf("Name: %s\n", u.Name)
+	fmt.Printf("Username: %s\n", u.Username)
+	fmt.Printf("Mail: %s\n", u.Mail)
+	fmt.Print("Groups:\n\n")
+	for _, g := range u.Groups {
+		fmt.Printf("DN: %s\n", g.DN)
+		fmt.Printf("Name: %s\n\n", g.Name)
+	}
 }
