@@ -55,7 +55,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 
 	entries, err = c.memberOf(c.base, u.DN, []string{"cn"})
 	if err != nil {
-		return nil, errors.Wrapf(err, "ldap search username: %s", user)
+		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", u.DN)
 	}
 
 	groups := auth.Groups{}
