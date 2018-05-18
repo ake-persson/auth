@@ -16,15 +16,21 @@ func main() {
 	port := flag.Int("port", 636, "LDAP port.")
 	domain := flag.String("domain", "", "AD Domain.")
 	base := flag.String("base", "", "LDAP Base.")
+	user := flag.String("user", "", "LDAP User.")
+	pass := flag.String("pass", "", "LDAP Password.")
 	flag.Parse()
 
-	c := tlscfg.New(&tlscfg.Options{ServerName: *server, Insecure: *insecure})
-	if err := c.Init(); err != nil {
+	cfg := tlscfg.New(&tlscfg.Options{ServerName: *server, Insecure: *insecure})
+	if err := cfg.Init(); err != nil {
 		log.Fatal(err)
 	}
 
-	_, err := auth.Open("ldap", []string{fmt.Sprintf("%s:%d", *server, *port)}, auth.TLS(c.Config()), auth.Domain(*domain), auth.Base(*base))
+	c, err := auth.Open("ldap", []string{fmt.Sprintf("%s:%d", *server, *port)}, auth.TLS(cfg.Config()), auth.Domain(*domain), auth.Base(*base))
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Login(*user, *pass); err != nil {
 		log.Fatal(err)
 	}
 }
