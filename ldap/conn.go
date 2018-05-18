@@ -43,6 +43,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
 
+	u.DN = entries[0].DN
 	for _, e := range entries[0].Attributes {
 		switch e.Name {
 		case "cn":
