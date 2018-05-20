@@ -9,6 +9,11 @@ import (
 	"gopkg.in/ldap.v2"
 )
 
+const (
+	filterUser     = "(&(objectClass=user)(sAMAccountName=%s))"
+	filterMemberOf = "(&(member=%s))"
+)
+
 type conn struct {
 	domain string
 	base   string
@@ -38,7 +43,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		Username: user,
 	}
 
-	entries, err := c.user(c.base, user, []string{"cn", "mail"})
+	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(filterUser, user), []string{"cn", "mail"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
@@ -53,7 +58,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		}
 	}
 
-	entries, err = c.memberOf(c.base, u.DN, []string{"cn"})
+	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(filterMemberOf, u.DN), []string{"cn"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", u.DN)
 	}
@@ -85,24 +90,6 @@ func (c *conn) search(base string, scope searchScope, query string, fields []str
 	}
 
 	return res.Entries, nil
-}
-
-func (c *conn) user(base string, user string, fields []string) ([]*ldap.Entry, error) {
-	entries, err := c.search(base, scopeSub, fmt.Sprintf("(&(objectClass=user)(sAMAccountName=%s))", user), fields)
-	if err != nil {
-		return nil, err
-	}
-
-	return entries, nil
-}
-
-func (c *conn) memberOf(base string, dn string, fields []string) ([]*ldap.Entry, error) {
-	entries, err := c.search(base, scopeSub, fmt.Sprintf("(&(member=%s))", dn), fields)
-	if err != nil {
-		return nil, err
-	}
-
-	return entries, nil
 }
 
 func (c *conn) Close() error {
