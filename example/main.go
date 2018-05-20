@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 
+	"crypto/tls"
+
 	"github.com/mickep76/auth"
 	_ "github.com/mickep76/auth/ldap"
-	"github.com/mickep76/tlscfg"
 )
 
 func main() {
@@ -20,12 +21,12 @@ func main() {
 	pass := flag.String("pass", "", "LDAP Password.")
 	flag.Parse()
 
-	cfg := tlscfg.New(&tlscfg.Options{ServerName: *server, Insecure: *insecure})
-	if err := cfg.Init(); err != nil {
-		log.Fatal(err)
+	cfg := &tls.Config{
+		InsecureSkipVerify: *insecure,
+		ServerName:         *server,
 	}
 
-	c, err := auth.Open("ldap", []string{fmt.Sprintf("%s:%d", *server, *port)}, auth.TLS(cfg.Config()), auth.Domain(*domain), auth.Base(*base))
+	c, err := auth.Open("ldap", []string{fmt.Sprintf("%s:%d", *server, *port)}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
 	if err != nil {
 		log.Fatal(err)
 	}
