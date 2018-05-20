@@ -30,6 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer c.Close()
 
 	u, err := c.Login(*user, *pass)
 	if err != nil {
