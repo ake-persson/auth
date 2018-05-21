@@ -73,7 +73,6 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	defer r.Body.Close()
 
 	s, err := t.Renew(h.expiration, h.skew).Sign(h.privateKey)
 	if err != nil {
@@ -98,7 +97,6 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	defer r.Body.Close()
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
