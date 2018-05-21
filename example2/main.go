@@ -20,6 +20,7 @@ type Handler struct {
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
 	expiration time.Duration
+	skew       time.Duration
 	conn       auth.Conn
 }
 
@@ -47,7 +48,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := u.Token(h.privateKey, h.expiration)
+	t, err := auth.NewToken(u, h.expiration, h.skew).Sign(h.privateKey)
 	if err != nil {
 		writeError(w, err)
 		return
