@@ -2,6 +2,7 @@ package ldap
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mickep76/auth"
 
@@ -54,7 +55,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		case "cn":
 			u.Name = a.Values[0]
 		case "mail":
-			u.Mail = a.Values[0]
+			u.Mail = strings.ToLower(a.Values[0])
 		}
 	}
 
