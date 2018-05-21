@@ -1,6 +1,7 @@
 ## Start server:
 
 ```bash
+./genkeys.sh
 ./example -server <server>:<port> -base <base> -domain <domain>
 ```
 
