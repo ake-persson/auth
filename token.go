@@ -2,8 +2,11 @@ package auth
 
 import (
 	"crypto/rsa"
+	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -17,6 +20,10 @@ type Claims struct {
 	*jwt.StandardClaims
 	*User
 }
+
+// Parse groups and return list of roles
+// RolesFn func(u *User) []string
+// Set cookie/ Get cookie
 
 func NewToken(user *User, expiration time.Duration, skew time.Duration) *Token {
 	t := &Token{jwt.New(jwt.SigningMethodRS512)}
@@ -50,6 +57,15 @@ func ParseTokenReader(reader io.ReadCloser, key *rsa.PublicKey) (*Token, error) 
 	}
 
 	return ParseToken(string(b), key)
+}
+
+func ParseTokenHeader(r *http.Request, key *rsa.PublicKey) (*Token, error) {
+	h := r.Header.Get("Authorization")
+	if h == "" {
+		return nil, errors.New("no authorization header")
+	}
+
+	return ParseToken(strings.Split(h, " ")[1], key)
 }
 
 func (t *Token) Authorized() error {

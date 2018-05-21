@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -62,13 +61,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
-	bearer := r.Header.Get("Authorization")
-	if bearer == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	t, err := auth.ParseToken(strings.Split(bearer, " ")[1], h.publicKey)
+	t, err := auth.ParseTokenHeader(r, h.publicKey)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -86,13 +79,7 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
-	bearer := r.Header.Get("Authorization")
-	if bearer == "" {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	t, err := auth.ParseToken(strings.Split(bearer, " ")[1], h.publicKey)
+	t, err := auth.ParseTokenHeader(r, h.publicKey)
 	if err != nil {
 		writeError(w, err)
 		return

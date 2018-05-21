@@ -1,12 +1,13 @@
 package auth
 
 type User struct {
-	DN       string `json:"dn,omitempty"`
-	UID      int    `json:"uid,omitempty"`
-	Username string `json:"username"`
-	Name     string `json:"name"`
-	Mail     string `json:"mail"`
-	Groups   Groups `json:"groups"`
+	DN       string   `json:"dn,omitempty"`
+	UID      int      `json:"uid,omitempty"`
+	Username string   `json:"username"`
+	Name     string   `json:"name"`
+	Mail     string   `json:"mail"`
+	Groups   Groups   `json:"-"`
+	Roles    []string `json:"roles,omitempty"`
 }
 
 type Group struct {
