@@ -52,6 +52,10 @@ func ParseTokenReader(reader io.ReadCloser, key *rsa.PublicKey) (*Token, error) 
 	return ParseToken(string(b), key)
 }
 
+func (t *Token) Authorized() error {
+	return nil
+}
+
 func (t *Token) Renew(expiration time.Duration, skew time.Duration) *Token {
 	claims := t.Claims.(jwt.MapClaims)
 	claims["iat"] = time.Now().Add(-skew).Unix()

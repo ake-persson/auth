@@ -6,7 +6,7 @@ type User struct {
 	Username string `json:"username"`
 	Name     string `json:"name"`
 	Mail     string `json:"mail"`
-	Groups   Groups `json:"-"`
+	Groups   Groups `json:"groups"`
 }
 
 type Group struct {
