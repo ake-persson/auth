@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -61,7 +62,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
-	t, err := auth.ParseTokenReader(r.Body, h.publicKey)
+	bearer := r.Header.Get("Authorization")
+	if bearer == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	t, err := auth.ParseToken(strings.Split(bearer, " ")[1], h.publicKey)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -80,7 +87,13 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
-	t, err := auth.ParseTokenReader(r.Body, h.publicKey)
+	bearer := r.Header.Get("Authorization")
+	if bearer == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	t, err := auth.ParseToken(strings.Split(bearer, " ")[1], h.publicKey)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -92,6 +105,7 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 
 	b, _ := json.MarshalIndent(t.Claims, "", "  ")
 	w.Write(b)
+
 }
 
 func main() {
@@ -144,8 +158,8 @@ func main() {
 	}
 
 	router.HandleFunc("/login", h.Login).Methods("POST")
-	router.HandleFunc("/renew", h.Renew).Methods("POST")
-	router.HandleFunc("/verify", h.Verify).Methods("POST")
+	router.HandleFunc("/renew", h.Renew).Methods("GET")
+	router.HandleFunc("/verify", h.Verify).Methods("GET")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
