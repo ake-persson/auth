@@ -79,6 +79,21 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(s))
 }
 
+func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
+	t, err := auth.ParseTokenReader(r.Body, h.publicKey)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	defer r.Body.Close()
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	b, _ := json.MarshalIndent(t.Claims, "", "  ")
+	w.Write(b)
+}
+
 func main() {
 	bind := flag.String("bind", "0.0.0.0:8080", "Bind to address.")
 	cert := flag.String("cert", "server.crt", "TLS HTTPS cert.")
@@ -128,9 +143,9 @@ func main() {
 		conn:       c,
 	}
 
-	router.HandleFunc("/renew", h.Renew).Methods("POST")
 	router.HandleFunc("/login", h.Login).Methods("POST")
-	//	router.HandleFunc("/verify", h.Login).Methods("POST")
+	router.HandleFunc("/renew", h.Renew).Methods("POST")
+	router.HandleFunc("/verify", h.Verify).Methods("POST")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
