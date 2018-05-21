@@ -58,14 +58,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(t))
 }
 
-func (h *Handler) Options(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH,DELETE")
-	w.Header().Set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
-	w.WriteHeader(http.StatusOK)
-}
-
 func main() {
 	bind := flag.String("bind", "0.0.0.0:8080", "Bind to address.")
 	cert := flag.String("cert", "server.crt", "TLS HTTPS cert.")
@@ -115,7 +107,6 @@ func main() {
 	}
 
 	router.HandleFunc("/login", h.Login).Methods("POST")
-	router.HandleFunc("/login", h.Options).Methods("OPTIONS")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
