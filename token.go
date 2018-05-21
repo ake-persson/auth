@@ -2,6 +2,8 @@ package auth
 
 import (
 	"crypto/rsa"
+	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -41,10 +43,21 @@ func ParseToken(token string, key *rsa.PublicKey) (*Token, error) {
 	return &Token{t}, nil
 }
 
-func (t *Token) Renew(expiration time.Duration, skew time.Duration) {
+func ParseTokenReader(reader io.ReadCloser, key *rsa.PublicKey) (*Token, error) {
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseToken(string(b), key)
+}
+
+func (t *Token) Renew(expiration time.Duration, skew time.Duration) *Token {
 	claims := t.Claims.(jwt.MapClaims)
 	claims["iat"] = time.Now().Add(-skew).Unix()
 	claims["exp"] = time.Now().Add(expiration).Unix()
+
+	return t
 }
 
 func (t *Token) Sign(key *rsa.PrivateKey) (string, error) {
