@@ -35,7 +35,7 @@ func writeError(w http.ResponseWriter, err error) {
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	l := Login{}
+	l := &Login{}
 	if err := json.NewDecoder(r.Body).Decode(l); err != nil {
 		writeError(w, err)
 		return
@@ -89,16 +89,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer c.Close()
+	//	defer c.Close()
 
 	// Load RSA private key.
-	_, err = auth.LoadPrivKey(*privKey)
+	privateKey, err := auth.LoadPrivateKey(*privKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Load RSA public key.
-	_, err = auth.LoadPubKey(*pubKey)
+	publicKey, err := auth.LoadPublicKey(*pubKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,6 +108,8 @@ func main() {
 
 	// Handlers
 	h := Handler{
+		privateKey: privateKey,
+		publicKey:  publicKey,
 		expiration: time.Duration(24) * time.Hour,
 		conn:       c,
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func LoadPrivKey(fn string) (*rsa.PrivateKey, error) {
+func LoadPrivateKey(fn string) (*rsa.PrivateKey, error) {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, errors.Wrapf(err, "read file: %s", fn)
@@ -22,7 +22,7 @@ func LoadPrivKey(fn string) (*rsa.PrivateKey, error) {
 	return k, nil
 }
 
-func LoadPubKey(fn string) (*rsa.PublicKey, error) {
+func LoadPublicKey(fn string) (*rsa.PublicKey, error) {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return nil, errors.Wrapf(err, "read file: %s", fn)
