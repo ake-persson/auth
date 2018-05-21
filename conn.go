@@ -31,6 +31,12 @@ func TLS(tls *tls.Config) func(Driver) error {
 	}
 }
 
+func DefaultTLS() func(Driver) error {
+	return func(d Driver) error {
+		return d.SetTLS(&tls.Config{})
+	}
+}
+
 func Domain(domain string) func(Driver) error {
 	return func(d Driver) error {
 		return d.SetDomain(domain)

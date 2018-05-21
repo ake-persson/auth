@@ -2,6 +2,7 @@ package ldap
 
 import (
 	"crypto/tls"
+	"strings"
 
 	"github.com/mickep76/auth"
 
@@ -37,9 +38,13 @@ func (d *driver) Open(endpoints []string) (auth.Conn, error) {
 	}
 
 	if d.tls != nil {
-		if err := c.StartTLS(d.tls); err != nil {
-			return nil, errors.Wrap(err, "ldap start tls")
+		d.tls = &tls.Config{
+			ServerName: strings.Split(endpoints[0], ":")[0],
 		}
+	}
+
+	if err := c.StartTLS(d.tls); err != nil {
+		return nil, errors.Wrap(err, "ldap start tls")
 	}
 
 	return &conn{
