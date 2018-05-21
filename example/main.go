@@ -23,7 +23,7 @@ func main() {
 
 	cfg := &tls.Config{
 		InsecureSkipVerify: *insecure,
-		ServerName:         *server,
+		ServerName:         *server, // Send SNI (Server Name Indication) for host that serves multiple aliases.
 	}
 
 	c, err := auth.Open("ldap", []string{fmt.Sprintf("%s:%d", *server, *port)}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
