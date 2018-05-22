@@ -13,6 +13,7 @@ import (
 )
 
 type ClaimsFn func(c *Claims)
+type AuthFn func(c *Claims) error
 
 type Token struct {
 	*jwt.Token
@@ -70,7 +71,13 @@ func ParseTokenHeader(r *http.Request, key *rsa.PublicKey) (*Token, error) {
 	return ParseToken(strings.Split(h, " ")[1], key)
 }
 
-func (t *Token) Authorized() error {
+func (t *Token) Authorized(fns ...AuthFn) error {
+	for _, fn := range fns {
+		if err := fn(t.Claims.(*Claims)); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
