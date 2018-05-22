@@ -1,37 +1,38 @@
 package auth
 
 import (
-	"crypto/rsa"
 	"io/ioutil"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 )
 
-func LoadPrivateKey(fn string) (*rsa.PrivateKey, error) {
+func (j *JWT) LoadPrivateKey(fn string) error {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
-		return nil, errors.Wrapf(err, "read file: %s", fn)
+		return errors.Wrapf(err, "read file: %s", fn)
 	}
 
 	k, err := jwt.ParseRSAPrivateKeyFromPEM(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "parse rsa private key")
+		return errors.Wrap(err, "parse rsa private key")
 	}
+	j.privateKey = k
 
-	return k, nil
+	return nil
 }
 
-func LoadPublicKey(fn string) (*rsa.PublicKey, error) {
+func (j *JWT) LoadPublicKey(fn string) error {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
-		return nil, errors.Wrapf(err, "read file: %s", fn)
+		return errors.Wrapf(err, "read file: %s", fn)
 	}
 
 	k, err := jwt.ParseRSAPublicKeyFromPEM(b)
 	if err != nil {
-		return nil, errors.Wrap(err, "parse rsa public key")
+		return errors.Wrap(err, "parse rsa public key")
 	}
+	j.publicKey = k
 
-	return k, nil
+	return nil
 }

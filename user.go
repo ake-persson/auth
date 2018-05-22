@@ -1,8 +1,8 @@
 package auth
 
 type User struct {
-	DN       string   `json:"dn,omitempty"`
-	UID      int      `json:"uid,omitempty"`
+	DN       string   `json:"-"`
+	UID      int      `json:"-"`
 	Username string   `json:"username"`
 	Name     string   `json:"name"`
 	Mail     string   `json:"mail"`

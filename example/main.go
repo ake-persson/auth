@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/rsa"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -18,11 +17,8 @@ import (
 )
 
 type Handler struct {
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
-	expiration time.Duration
-	skew       time.Duration
-	conn       auth.Conn
+	jwt  *auth.JWT
+	conn auth.Conn
 }
 
 type Login struct {
@@ -64,7 +60,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := auth.NewToken(u, h.expiration, h.skew, setRoles).Sign(h.privateKey)
+	s, err := h.jwt.NewToken(u, setRoles).Sign()
 	if err != nil {
 		writeError(w, err)
 		return
@@ -76,7 +72,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
-	t, err := auth.ParseTokenHeader(r, h.publicKey)
+	t, err := h.jwt.ParseTokenHeader(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -84,7 +80,7 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := t.Renew(h.expiration, h.skew).Sign(h.privateKey)
+	s, err := t.Renew().Sign()
 	if err != nil {
 		writeError(w, err)
 		return
@@ -96,7 +92,7 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
-	t, err := auth.ParseTokenHeader(r, h.publicKey)
+	t, err := h.jwt.ParseTokenHeader(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -145,14 +141,17 @@ func main() {
 	}
 	defer c.Close()
 
+	// Create JWT.
+	j := auth.NewJWT(auth.SignRSA512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
+
 	// Load RSA private key.
-	privateKey, err := auth.LoadPrivateKey(*privKey)
+	j.LoadPrivateKey(*privKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Load RSA public key.
-	publicKey, err := auth.LoadPublicKey(*pubKey)
+	j.LoadPublicKey(*pubKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -162,17 +161,14 @@ func main() {
 
 	// Handlers
 	h := Handler{
-		privateKey: privateKey,
-		publicKey:  publicKey,
-		expiration: time.Duration(24) * time.Hour,
-		skew:       time.Duration(5) * time.Minute,
-		conn:       c,
+		jwt:  j,
+		conn: c,
 	}
 
 	router.HandleFunc("/login", h.Login).Methods("POST")
 	router.HandleFunc("/renew", h.Renew).Methods("GET")
 	router.HandleFunc("/verify", h.Verify).Methods("GET")
-	router.Handle("/admin", auth.Authorized(http.HandlerFunc(h.Admin), h.publicKey, isAdmin)).Methods("GET")
+	router.Handle("/admin", j.Authorized(http.HandlerFunc(h.Admin), isAdmin)).Methods("GET")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
