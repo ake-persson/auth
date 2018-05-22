@@ -12,6 +12,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+type ClaimsFn func(c *Claims)
+
 type Token struct {
 	*jwt.Token
 }
@@ -21,11 +23,7 @@ type Claims struct {
 	*User
 }
 
-// Parse groups and return list of roles
-// RolesFn func(u *User) []string
-// Set cookie/ Get cookie
-
-func NewToken(user *User, expiration time.Duration, skew time.Duration) *Token {
+func NewToken(user *User, expiration time.Duration, skew time.Duration, fns ...ClaimsFn) *Token {
 	t := &Token{jwt.New(jwt.SigningMethodRS512)}
 
 	t.Claims = &Claims{
@@ -34,6 +32,10 @@ func NewToken(user *User, expiration time.Duration, skew time.Duration) *Token {
 			ExpiresAt: time.Now().Add(expiration).Unix(),
 		},
 		User: user,
+	}
+
+	for _, fn := range fns {
+		fn(t.Claims.(*Claims))
 	}
 
 	return t

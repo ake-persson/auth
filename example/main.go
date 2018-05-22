@@ -29,6 +29,10 @@ type Login struct {
 	Password string `json:"password"`
 }
 
+var assignRoles = auth.ClaimsFn(func(c *auth.Claims) {
+	c.Roles = []string{"admin"}
+})
+
 func writeError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusBadRequest)
@@ -49,7 +53,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := auth.NewToken(u, h.expiration, h.skew).Sign(h.privateKey)
+	s, err := auth.NewToken(u, h.expiration, h.skew, assignRoles).Sign(h.privateKey)
 	if err != nil {
 		writeError(w, err)
 		return
