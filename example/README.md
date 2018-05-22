@@ -1,13 +1,14 @@
-## Start server:
+## Start server
 
 ```bash
 ./genkeys.sh
-./example -server <server>:<port> -base <base> -domain <domain>
+./example -server ldap:389 -base dc=example,dc=com -domain example
 ```
 
-## Login and verify:
+## Login, verify and denied access
 
 ```bash
-curl -k -d '{ "username": "<username>", "password": "<password>" }' -X POST https://localhost:8080/login >token
+curl -k -d '{ "username": "my_username", "password": "my_password" }' -X POST https://localhost:8080/login >token
 curl -i -k --header "Authorization: Bearer $(cat token)" https://localhost:8080/verify
+curl -i -k --header "Authorization: Bearer $(cat token)" https://localhost:8080/admin
 ```

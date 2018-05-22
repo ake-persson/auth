@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -131,7 +132,7 @@ func main() {
 	// Create TLS config.
 	cfg := &tls.Config{
 		InsecureSkipVerify: *insecure,
-		ServerName:         *server, // Send SNI (Server Name Indication) for host that serves multiple aliases.
+		ServerName:         strings.Split(*server, ":")[0], // Send SNI (Server Name Indication) for host that serves multiple aliases.
 	}
 
 	// Create new auth connection.
