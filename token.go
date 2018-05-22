@@ -12,9 +12,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-type ClaimsFn func(c *Claims)
-type AuthFn func(c *Claims) error
-
 type Token struct {
 	*jwt.Token
 }
@@ -24,7 +21,7 @@ type Claims struct {
 	*User
 }
 
-func NewToken(user *User, expiration time.Duration, skew time.Duration, fns ...ClaimsFn) *Token {
+func NewToken(user *User, expiration time.Duration, skew time.Duration, fns ...func(c *Claims)) *Token {
 	t := &Token{jwt.New(jwt.SigningMethodRS512)}
 
 	t.Claims = &Claims{
@@ -43,7 +40,7 @@ func NewToken(user *User, expiration time.Duration, skew time.Duration, fns ...C
 }
 
 func ParseToken(token string, key *rsa.PublicKey) (*Token, error) {
-	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	t, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return key, nil
 	})
 	if err != nil {
@@ -71,16 +68,6 @@ func ParseTokenHeader(r *http.Request, key *rsa.PublicKey) (*Token, error) {
 	return ParseToken(strings.Split(h, " ")[1], key)
 }
 
-func (t *Token) Authorized(fns ...AuthFn) error {
-	for _, fn := range fns {
-		if err := fn(t.Claims.(*Claims)); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (t *Token) Renew(expiration time.Duration, skew time.Duration) *Token {
 	claims := t.Claims.(jwt.MapClaims)
 	claims["iat"] = time.Now().Add(-skew).Unix()
@@ -91,4 +78,27 @@ func (t *Token) Renew(expiration time.Duration, skew time.Duration) *Token {
 
 func (t *Token) Sign(key *rsa.PrivateKey) (string, error) {
 	return t.SignedString(key)
+}
+
+func Authorized(handler http.Handler, key *rsa.PublicKey, fns ...func(c *Claims) error) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		t, err := ParseTokenHeader(r, key)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		for _, fn := range fns {
+			if err := fn(t.Claims.(*Claims)); err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+		}
+
+		handler.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(fn)
 }

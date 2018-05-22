@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"flag"
 	"log"
 	"net/http"
@@ -29,13 +30,23 @@ type Login struct {
 	Password string `json:"password"`
 }
 
-var assignRoles = auth.ClaimsFn(func(c *auth.Claims) {
-	c.Roles = []string{"admin"}
-})
+var setRoles = func(c *auth.Claims) {
+	c.Roles = []string{"operator"}
+}
+
+var isAdmin = func(c *auth.Claims) error {
+	for _, r := range c.Roles {
+		if r == "admin" {
+			return nil
+		}
+	}
+
+	return errors.New("need to be admin")
+}
 
 func writeError(w http.ResponseWriter, err error) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusBadRequest)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(err.Error()))
 }
 
@@ -53,21 +64,23 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := auth.NewToken(u, h.expiration, h.skew, assignRoles).Sign(h.privateKey)
+	s, err := auth.NewToken(u, h.expiration, h.skew, setRoles).Sign(h.privateKey)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(s))
 }
 
 func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 	t, err := auth.ParseTokenHeader(r, h.publicKey)
 	if err != nil {
-		writeError(w, err)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(err.Error()))
 		return
 	}
 
@@ -77,24 +90,34 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(s))
 }
 
 func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 	t, err := auth.ParseTokenHeader(r, h.publicKey)
 	if err != nil {
-		writeError(w, err)
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(err.Error()))
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-
 	b, _ := json.MarshalIndent(t.Claims, "", "  ")
-	w.Write(b)
 
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Write(b)
+}
+
+func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) {
+	m := map[string]interface{}{"admin": true}
+	b, _ := json.MarshalIndent(&m, "", "  ")
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Write(b)
 }
 
 func main() {
@@ -149,6 +172,7 @@ func main() {
 	router.HandleFunc("/login", h.Login).Methods("POST")
 	router.HandleFunc("/renew", h.Renew).Methods("GET")
 	router.HandleFunc("/verify", h.Verify).Methods("GET")
+	router.Handle("/admin", auth.Authorized(http.HandlerFunc(h.Admin), h.publicKey, isAdmin)).Methods("GET")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
