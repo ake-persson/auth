@@ -118,6 +118,7 @@ func (h *Handler) Admin(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	backend := flag.String("backend", "ad", "Backend either ad or ldap.")
 	bind := flag.String("bind", "0.0.0.0:8080", "Bind to address.")
 	cert := flag.String("cert", "server.crt", "TLS HTTPS cert.")
 	key := flag.String("key", "server.key", "TLS HTTPS key.")
@@ -136,7 +137,7 @@ func main() {
 	}
 
 	// Create new auth connection.
-	c, err := auth.Open("ad", []string{*server}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
+	c, err := auth.Open(*backend, []string{*server}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -64,6 +64,10 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
 
+	if len(entries) == 0 {
+		return nil, errors.Errorf("unknown user: %s", user)
+	}
+
 	u.DN = entries[0].DN
 	for _, a := range entries[0].Attributes {
 		switch a.Name {
