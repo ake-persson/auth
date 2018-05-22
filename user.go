@@ -11,6 +11,7 @@ type User struct {
 	Shell    string   `json:"shell,omitempty"`
 	Groups   Groups   `json:"-"`
 	Roles    []string `json:"roles,omitempty"`
+	Renewed  int      `json:"renewed"`
 }
 
 type Group struct {

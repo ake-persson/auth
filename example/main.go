@@ -143,7 +143,7 @@ func main() {
 	defer c.Close()
 
 	// Create JWT.
-	j := auth.NewJWT(auth.SignRSA512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
+	j := auth.NewJWT(auth.SignRS512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
 
 	// Load RSA private key.
 	j.LoadPrivateKey(*privKey)

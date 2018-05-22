@@ -12,16 +12,16 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-type SignRSA *jwt.SigningMethodRSA
+type Sign *jwt.SigningMethodRSA
 
 var (
-	SignRSA256 = jwt.SigningMethodRS256
-	SignRSA384 = jwt.SigningMethodRS384
-	SignRSA512 = jwt.SigningMethodRS512
+	SignRS256 = jwt.SigningMethodRS256
+	SignRS384 = jwt.SigningMethodRS384
+	SignRS512 = jwt.SigningMethodRS512
 )
 
 type JWT struct {
-	sign       SignRSA
+	sign       Sign
 	privateKey *rsa.PrivateKey
 	publicKey  *rsa.PublicKey
 	expiration time.Duration
@@ -38,7 +38,7 @@ type Claims struct {
 	*User
 }
 
-func NewJWT(sign SignRSA, expiration time.Duration, skew time.Duration) *JWT {
+func NewJWT(sign Sign, expiration time.Duration, skew time.Duration) *JWT {
 	return &JWT{
 		sign:       sign,
 		expiration: expiration,
@@ -99,9 +99,10 @@ func (j *JWT) ParseTokenHeader(r *http.Request) (*Token, error) {
 }
 
 func (t *Token) Renew() *Token {
-	claims := t.Claims.(jwt.MapClaims)
-	claims["iat"] = time.Now().Add(-t.skew).Unix()
-	claims["exp"] = time.Now().Add(t.expiration).Unix()
+	c := t.Claims.(*Claims)
+	c.IssuedAt = time.Now().Add(-t.skew).Unix()
+	c.ExpiresAt = time.Now().Add(t.expiration).Unix()
+	c.Renewed++
 	return t
 }
 
