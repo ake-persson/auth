@@ -136,7 +136,7 @@ func main() {
 	}
 
 	// Create new auth connection.
-	c, err := auth.Open("ldap", []string{*server}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
+	c, err := auth.Open("ad", []string{*server}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
 	if err != nil {
 		log.Fatal(err)
 	}

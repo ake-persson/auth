@@ -10,6 +10,7 @@ import (
 )
 
 type driver struct {
+	name     string
 	endpoint string
 	domain   string
 	base     string
@@ -45,12 +46,21 @@ func (d *driver) Open(endpoints []string) (auth.Conn, error) {
 		}
 	}
 
-	return &conn{
-		driver: d,
-		Conn:   c,
-	}, nil
+	nc := &conn{
+		filterUser:   filterUser,
+		filterMember: filterMember,
+		driver:       d,
+		Conn:         c,
+	}
+
+	if d.name == "ad" {
+		nc.filterUser = filterUserAD
+	}
+
+	return nc, nil
 }
 
 func init() {
-	auth.Register("ldap", &driver{})
+	auth.Register("ldap", &driver{name: "ldap"})
+	auth.Register("ad", &driver{name: "ad"})
 }

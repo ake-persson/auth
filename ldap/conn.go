@@ -11,14 +11,15 @@ import (
 	"gopkg.in/ldap.v2"
 )
 
-// TODO: Customize filters based on LDAP server like AD, OpenLDAP
-
 const (
-	filterUser     = "(&(objectClass=user)(sAMAccountName=%s))"
-	filterMemberOf = "(&(member=%s))"
+	filterUser   = "(&(objectClass=user)(sn=%s))"
+	filterUserAD = "(&(objectClass=user)(sAMAccountName=%s))"
+	filterMember = "(&(objectClass=user)(sAMAccountName=%s))"
 )
 
 type conn struct {
+	filterUser   string
+	filterMember string
 	*driver
 	*ldap.Conn
 }
@@ -58,7 +59,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		Username: user,
 	}
 
-	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(filterUser, user), []string{"cn", "mail", "uidNumber", "gidNumber", "homeDirectory", "loginShell"})
+	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(c.filterUser, user), []string{"cn", "mail", "uidNumber", "gidNumber", "homeDirectory", "loginShell"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
@@ -81,7 +82,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		}
 	}
 
-	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(filterMemberOf, u.DN), []string{"cn", "gidNumber"})
+	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(c.filterMember, u.DN), []string{"cn", "gidNumber"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", u.DN)
 	}
