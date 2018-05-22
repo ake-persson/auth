@@ -6,9 +6,12 @@ import (
 
 	"github.com/mickep76/auth"
 
+	"github.com/mickep76/qry/cnv"
 	"github.com/pkg/errors"
 	"gopkg.in/ldap.v2"
 )
+
+// TODO: Customize filters based on LDAP server like AD, OpenLDAP
 
 const (
 	filterUser     = "(&(objectClass=user)(sAMAccountName=%s))"
@@ -55,7 +58,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		Username: user,
 	}
 
-	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(filterUser, user), []string{"cn", "mail"})
+	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(filterUser, user), []string{"cn", "mail", "uidNumber", "gidNumber", "homeDirectory", "loginShell"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
@@ -67,10 +70,18 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 			u.Name = a.Values[0]
 		case "mail":
 			u.Mail = strings.ToLower(a.Values[0])
+		case "uidNumber":
+			cnv.ParseInt(a.Values[0], &u.UID)
+		case "gidNumber":
+			cnv.ParseInt(a.Values[0], &u.GID)
+		case "homeDirectory":
+			u.Home = a.Values[0]
+		case "loginShell":
+			u.Shell = a.Values[0]
 		}
 	}
 
-	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(filterMemberOf, u.DN), []string{"cn"})
+	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(filterMemberOf, u.DN), []string{"cn", "gidNumber"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", u.DN)
 	}
@@ -84,6 +95,8 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 			switch a.Name {
 			case "cn":
 				g.Name = a.Values[0]
+			case "gidNumber":
+				cnv.ParseInt(a.Values[0], &u.GID)
 			}
 			groups = append(groups, g)
 		}
