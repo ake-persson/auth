@@ -10,9 +10,10 @@ import (
 )
 
 type driver struct {
-	domain string
-	base   string
-	tls    *tls.Config
+	endpoint string
+	domain   string
+	base     string
+	tls      *tls.Config
 }
 
 func (d *driver) SetTLS(tls *tls.Config) error {
@@ -31,7 +32,9 @@ func (d *driver) SetBase(base string) error {
 }
 
 func (d *driver) Open(endpoints []string) (auth.Conn, error) {
-	c, err := ldap.Dial("tcp", endpoints[0])
+	d.endpoint = endpoints[0]
+
+	c, err := ldap.Dial("tcp", d.endpoint)
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap dial: %s", endpoints[0])
 	}
@@ -43,8 +46,7 @@ func (d *driver) Open(endpoints []string) (auth.Conn, error) {
 	}
 
 	return &conn{
-		domain: d.domain,
-		base:   d.base,
+		driver: d,
 		Conn:   c,
 	}, nil
 }

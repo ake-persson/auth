@@ -16,9 +16,7 @@ const (
 )
 
 type conn struct {
-	domain string
-	base   string
-
+	*driver
 	*ldap.Conn
 }
 
@@ -37,7 +35,20 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 	}
 
 	if err := c.Bind(loginUser, pass); err != nil {
-		return nil, errors.Wrapf(err, "ldap bind user: %s", loginUser)
+		if ldap.IsErrorWithCode(err, ldap.ErrorNetwork) {
+			// Retry
+			nc, err := c.driver.Open([]string{c.endpoint})
+			if err != nil {
+				return nil, err
+			}
+			c = nc.(*conn)
+
+			if err := c.Bind(loginUser, pass); err != nil {
+				return nil, errors.Wrapf(err, "ldap bind user: %s", loginUser)
+			}
+		} else {
+			return nil, errors.Wrapf(err, "ldap bind user: %s", loginUser)
+		}
 	}
 
 	u := &auth.User{
