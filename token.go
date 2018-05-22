@@ -93,6 +93,8 @@ func Authorized(handler http.Handler, key *rsa.PublicKey, fns ...func(c *Claims)
 		for _, fn := range fns {
 			if err := fn(t.Claims.(*Claims)); err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write([]byte(err.Error()))
 				return
 			}
 		}
