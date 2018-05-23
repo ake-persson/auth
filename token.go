@@ -13,6 +13,8 @@ import (
 )
 
 type Sign *jwt.SigningMethodRSA
+type PolicyFn func(c *Claims)
+type PermFn func(c *Claims) error
 
 var (
 	SignRS256 = jwt.SigningMethodRS256
@@ -46,7 +48,7 @@ func NewJWT(sign Sign, expiration time.Duration, skew time.Duration) *JWT {
 	}
 }
 
-func (j *JWT) NewToken(user *User, fns ...func(c *Claims)) *Token {
+func (j *JWT) NewToken(user *User, policies ...PolicyFn) *Token {
 	t := &Token{
 		JWT:   j,
 		Token: jwt.New(jwt.SigningMethodRS512),
@@ -60,8 +62,8 @@ func (j *JWT) NewToken(user *User, fns ...func(c *Claims)) *Token {
 		User: user,
 	}
 
-	for _, fn := range fns {
-		fn(t.Claims.(*Claims))
+	for _, policy := range policies {
+		policy(t.Claims.(*Claims))
 	}
 
 	return t
@@ -110,7 +112,7 @@ func (t *Token) Sign() (string, error) {
 	return t.SignedString(t.privateKey)
 }
 
-func (j *JWT) Authorized(handler http.Handler, fns ...func(c *Claims) error) http.Handler {
+func (j *JWT) Authorized(handler http.Handler, perms ...PermFn) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		t, err := j.ParseTokenHeader(r)
 		if err != nil {
@@ -120,8 +122,8 @@ func (j *JWT) Authorized(handler http.Handler, fns ...func(c *Claims) error) htt
 			return
 		}
 
-		for _, fn := range fns {
-			if err := fn(t.Claims.(*Claims)); err != nil {
+		for _, perm := range perms {
+			if err := perm(t.Claims.(*Claims)); err != nil {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
 				w.Write([]byte(err.Error()))

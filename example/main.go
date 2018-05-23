@@ -27,11 +27,11 @@ type Login struct {
 	Password string `json:"password"`
 }
 
-var setRoles = func(c *auth.Claims) {
+var OperPolicy = auth.PolicyFn(func(c *auth.Claims) {
 	c.Roles = []string{"operator"}
-}
+})
 
-var isAdmin = func(c *auth.Claims) error {
+var isAdminPerm = auth.PermFn(func(c *auth.Claims) error {
 	for _, r := range c.Roles {
 		if r == "admin" {
 			return nil
@@ -39,7 +39,7 @@ var isAdmin = func(c *auth.Claims) error {
 	}
 
 	return errors.New("need to be admin")
-}
+})
 
 func writeError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusBadRequest)
@@ -61,7 +61,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := h.jwt.NewToken(u, setRoles).Sign()
+	s, err := h.jwt.NewToken(u, OperPolicy).Sign()
 	if err != nil {
 		writeError(w, err)
 		return
@@ -170,7 +170,7 @@ func main() {
 	router.HandleFunc("/login", h.Login).Methods("POST")
 	router.HandleFunc("/renew", h.Renew).Methods("GET")
 	router.HandleFunc("/verify", h.Verify).Methods("GET")
-	router.Handle("/admin", j.Authorized(http.HandlerFunc(h.Admin), isAdmin)).Methods("GET")
+	router.Handle("/admin", j.Authorized(http.HandlerFunc(h.Admin), isAdminPerm)).Methods("GET")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
