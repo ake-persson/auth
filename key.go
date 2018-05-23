@@ -1,7 +1,12 @@
 package auth
 
 import (
+	"bytes"
+	"crypto/tls"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
@@ -29,6 +34,46 @@ func (j *JWT) LoadPublicKey(fn string) error {
 	}
 
 	k, err := jwt.ParseRSAPublicKeyFromPEM(b)
+	if err != nil {
+		return errors.Wrap(err, "parse rsa public key")
+	}
+	j.publicKey = k
+
+	return nil
+}
+
+func (j *JWT) DownloadPublicKey(url string, tmout time.Duration, cfg *tls.Config) error {
+	// New request.
+	req, err := http.NewRequest("GET", url, nil)
+	req.Close = true
+
+	// Configure transport.
+	tr := &http.Transport{
+		TLSClientConfig:    cfg,
+		DisableCompression: true,
+	}
+
+	// Get a http client.
+	clnt := &http.Client{
+		Timeout:   tmout,
+		Transport: tr,
+	}
+
+	// Download public key.
+	resp, err := clnt.Do(req)
+	if err != nil {
+		return errors.Wrapf(err, "download rsa public key: %s", url)
+	}
+	defer resp.Body.Close()
+
+	// Copy public key.
+	b := new(bytes.Buffer)
+	if _, err := io.CopyN(b, resp.Body, resp.ContentLength); err != nil {
+		return errors.Wrap(err, "copy rsa public key")
+	}
+
+	// Parse key.
+	k, err := jwt.ParseRSAPublicKeyFromPEM(b.Bytes())
 	if err != nil {
 		return errors.Wrap(err, "parse rsa public key")
 	}
