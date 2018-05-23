@@ -50,7 +50,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		Username: user,
 	}
 
-	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(c.filterUser, user), []string{"cn", "mail"})
+	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(c.filterUser, user), []string{"cn", "title", "description", "mail", "company", "department", "l", "st", "co"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
@@ -68,8 +68,22 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		switch a.Name {
 		case "cn":
 			u.Name = a.Values[0]
+		case "title":
+			u.Title = a.Values[0]
+		case "description":
+			u.Descr = a.Values[0]
 		case "mail":
 			u.Mail = strings.ToLower(a.Values[0])
+		case "company":
+			u.Company = a.Values[0]
+		case "department":
+			u.Department = a.Values[0]
+		case "l":
+			u.Location = a.Values[0]
+		case "st":
+			u.State = a.Values[0]
+		case "co":
+			u.Country = a.Values[0]
 		}
 	}
 
