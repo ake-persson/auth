@@ -19,9 +19,10 @@ type driver struct {
 }
 
 const (
-	filterUser     = "(&(objectClass=user)(sn=%s))"
-	filterUserAD   = "(&(objectClass=user)(sAMAccountName=%s))"
-	filterMemberOf = "(&(member=%s))"
+	filterUser       = "(&(objectClass=user)(sn=%s))"
+	filterMemberOf   = "(&(objectClass=group)(member=%s))"
+	filterUserAD     = "(&(objectClass=user)(sAMAccountName=%s))"
+	filterMemberOfAD = "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=2147483648)(member=%s))"
 )
 
 func (d *driver) SetTLS(tls *tls.Config) error {
@@ -78,6 +79,6 @@ func init() {
 	})
 	auth.Register("ad", &driver{
 		filterUser:     filterUserAD,
-		filterMemberOf: filterMemberOf,
+		filterMemberOf: filterMemberOfAD,
 	})
 }
