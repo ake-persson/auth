@@ -6,7 +6,6 @@ import (
 
 	"github.com/mickep76/auth"
 
-	"github.com/mickep76/qry/cnv"
 	"github.com/pkg/errors"
 	"gopkg.in/ldap.v2"
 )
@@ -51,7 +50,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		Username: user,
 	}
 
-	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(c.filterUser, user), []string{"cn", "mail", "uidNumber", "gidNumber", "homeDirectory", "loginShell"})
+	entries, err := c.search(c.base, scopeSub, fmt.Sprintf(c.filterUser, user), []string{"cn", "mail"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search username: %s", user)
 	}
@@ -60,45 +59,33 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		return nil, errors.Errorf("unknown user: %s", user)
 	}
 
-	u.DN = entries[0].DN
+	if len(entries) > 1 {
+		return nil, errors.Errorf("matched multiple accounts for user: %s", user)
+	}
+
+	dn := entries[0].DN
 	for _, a := range entries[0].Attributes {
 		switch a.Name {
 		case "cn":
 			u.Name = a.Values[0]
 		case "mail":
 			u.Mail = strings.ToLower(a.Values[0])
-		case "uidNumber":
-			cnv.ParseInt(a.Values[0], &u.UID)
-		case "gidNumber":
-			cnv.ParseInt(a.Values[0], &u.GID)
-		case "homeDirectory":
-			u.Home = a.Values[0]
-		case "loginShell":
-			u.Shell = a.Values[0]
 		}
 	}
 
-	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(c.filterMemberOf, u.DN), []string{"cn", "gidNumber"})
+	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(c.filterMemberOf, dn), []string{"cn"})
 	if err != nil {
-		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", u.DN)
+		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", dn)
 	}
 
-	groups := auth.Groups{}
 	for _, e := range entries {
 		for _, a := range e.Attributes {
-			g := &auth.Group{
-				DN: e.DN,
-			}
 			switch a.Name {
 			case "cn":
-				g.Name = a.Values[0]
-			case "gidNumber":
-				cnv.ParseInt(a.Values[0], &u.GID)
+				u.Groups = append(u.Groups, a.Values[0])
 			}
-			groups = append(groups, g)
 		}
 	}
-	u.Groups = groups
 
 	return u, nil
 }
