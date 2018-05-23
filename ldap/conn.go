@@ -87,6 +87,22 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		}
 	}
 
+	if c.filterMemberOfDistr != "" {
+		entries, err = c.search(c.base, scopeSub, fmt.Sprintf(c.filterMemberOfDistr, dn), []string{"cn"})
+		if err != nil {
+			return nil, errors.Wrapf(err, "ldap search user dn member of distr. list: %s", dn)
+		}
+
+		for _, e := range entries {
+			for _, a := range e.Attributes {
+				switch a.Name {
+				case "cn":
+					u.DistrLists = append(u.DistrLists, a.Values[0])
+				}
+			}
+		}
+	}
+
 	return u, nil
 }
 

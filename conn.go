@@ -60,3 +60,9 @@ func FilterMemberOf(filter string) func(Driver) error {
 		return d.SetFilterMemberOf(filter)
 	}
 }
+
+func FilterMemberOfDistr(filter string) func(Driver) error {
+	return func(d Driver) error {
+		return d.SetFilterMemberOfDistr(filter)
+	}
+}
