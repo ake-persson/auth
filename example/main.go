@@ -147,14 +147,12 @@ func main() {
 	j := auth.NewJWT(auth.SignRS512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
 
 	// Load RSA private key.
-	j.LoadPrivateKey(*privKey)
-	if err != nil {
+	if err := j.LoadPrivateKey(*privKey); err != nil {
 		log.Fatal(err)
 	}
 
 	// Load RSA public key.
-	j.LoadPublicKey(*pubKey)
-	if err != nil {
+	if err := j.LoadPublicKey(*pubKey); err != nil {
 		log.Fatal(err)
 	}
 
