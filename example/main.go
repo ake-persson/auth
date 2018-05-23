@@ -27,7 +27,7 @@ type Login struct {
 	Password string `json:"password"`
 }
 
-var OperPolicy = auth.PolicyFn(func(c *auth.Claims) {
+var setOperPolicy = auth.PolicyFn(func(c *auth.Claims) {
 	c.Roles = []string{"operator"}
 })
 
@@ -61,7 +61,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := h.jwt.NewToken(u, OperPolicy).Sign()
+	s, err := h.jwt.NewToken(u, setOperPolicy).Sign()
 	if err != nil {
 		writeError(w, err)
 		return
