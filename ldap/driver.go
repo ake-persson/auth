@@ -10,12 +10,19 @@ import (
 )
 
 type driver struct {
-	name     string
-	endpoint string
-	domain   string
-	base     string
-	tls      *tls.Config
+	endpoint       string
+	domain         string
+	base           string
+	filterUser     string
+	filterMemberOf string
+	tls            *tls.Config
 }
+
+const (
+	filterUser     = "(&(objectClass=user)(sn=%s))"
+	filterUserAD   = "(&(objectClass=user)(sAMAccountName=%s))"
+	filterMemberOf = "(&(member=%s))"
+)
 
 func (d *driver) SetTLS(tls *tls.Config) error {
 	d.tls = tls
@@ -29,6 +36,16 @@ func (d *driver) SetDomain(domain string) error {
 
 func (d *driver) SetBase(base string) error {
 	d.base = base
+	return nil
+}
+
+func (d *driver) SetFilterUser(filter string) error {
+	d.filterUser = filter
+	return nil
+}
+
+func (d *driver) SetFilterMemberOf(filter string) error {
+	d.filterMemberOf = filter
 	return nil
 }
 
@@ -47,20 +64,20 @@ func (d *driver) Open(endpoints []string) (auth.Conn, error) {
 	}
 
 	nc := &conn{
-		filterUser:   filterUser,
-		filterMember: filterMember,
-		driver:       d,
-		Conn:         c,
-	}
-
-	if d.name == "ad" {
-		nc.filterUser = filterUserAD
+		driver: d,
+		Conn:   c,
 	}
 
 	return nc, nil
 }
 
 func init() {
-	auth.Register("ldap", &driver{name: "ldap"})
-	auth.Register("ad", &driver{name: "ad"})
+	auth.Register("ldap", &driver{
+		filterUser:     filterUser,
+		filterMemberOf: filterMemberOf,
+	})
+	auth.Register("ad", &driver{
+		filterUser:     filterUserAD,
+		filterMemberOf: filterMemberOf,
+	})
 }

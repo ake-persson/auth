@@ -48,3 +48,15 @@ func Base(base string) func(Driver) error {
 		return d.SetBase(base)
 	}
 }
+
+func FilterUser(filter string) func(Driver) error {
+	return func(d Driver) error {
+		return d.SetFilterUser(filter)
+	}
+}
+
+func FilterMemberOf(filter string) func(Driver) error {
+	return func(d Driver) error {
+		return d.SetFilterMemberOf(filter)
+	}
+}

@@ -8,6 +8,8 @@ type Driver interface {
 	SetTLS(config *tls.Config) error
 	SetDomain(domain string) error
 	SetBase(base string) error
+	SetFilterUser(filter string) error
+	SetFilterMemberOf(filter string) error
 	Open(endpoints []string) (Conn, error)
 }
 

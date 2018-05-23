@@ -11,15 +11,7 @@ import (
 	"gopkg.in/ldap.v2"
 )
 
-const (
-	filterUser   = "(&(objectClass=user)(sn=%s))"
-	filterUserAD = "(&(objectClass=user)(sAMAccountName=%s))"
-	filterMember = "(&(objectClass=user)(sAMAccountName=%s))"
-)
-
 type conn struct {
-	filterUser   string
-	filterMember string
 	*driver
 	*ldap.Conn
 }
@@ -86,7 +78,7 @@ func (c *conn) Login(user string, pass string) (*auth.User, error) {
 		}
 	}
 
-	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(c.filterMember, u.DN), []string{"cn", "gidNumber"})
+	entries, err = c.search(c.base, scopeSub, fmt.Sprintf(c.filterMemberOf, u.DN), []string{"cn", "gidNumber"})
 	if err != nil {
 		return nil, errors.Wrapf(err, "ldap search user dn member of: %s", u.DN)
 	}
