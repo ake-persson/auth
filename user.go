@@ -1,7 +1,6 @@
 package auth
 
 type User struct {
-	ReqUUID    string   `json:"reqUUID"`
 	Username   string   `json:"username"`
 	Name       string   `json:"name"`
 	Title      string   `json:"-"` // `json:"title"`
