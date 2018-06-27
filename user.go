@@ -1,6 +1,7 @@
 package auth
 
 type User struct {
+	UUID       string   `json:"uuid,omitempty"`
 	Username   string   `json:"username"`
 	Name       string   `json:"name"`
 	Title      string   `json:"-"` // `json:"title"`
