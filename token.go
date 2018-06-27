@@ -36,7 +36,6 @@ type Token struct {
 }
 
 type Claims struct {
-	UUID string `json:"uuid"`
 	*jwt.StandardClaims
 	*User
 }
