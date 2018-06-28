@@ -22,11 +22,19 @@ type JWTServer struct {
 type JWTServerOption func(*JWTServer) error
 
 func NewJWTServer(signingAlgo SigningAlgo, expiration time.Duration, skew time.Duration, options ...JWTServerOption) (*JWTServer, error) {
-	return &JWTServer{
+	j := &JWTServer{
 		signingAlgo: signingAlgo,
 		expiration:  expiration,
 		skew:        skew,
-	}, nil
+	}
+
+	for _, option := range options {
+		if err := option(j); err != nil {
+			return nil, err
+		}
+	}
+
+	return j, nil
 }
 
 func (j *JWTServer) NewToken(c *Claims, policies ...PolicyFunc) *Token {
