@@ -10,21 +10,19 @@ import (
 )
 
 type driver struct {
-	endpoint            string
-	domain              string
-	base                string
-	filterUser          string
-	filterMemberOf      string
-	filterMemberOfDistr string
-	tls                 *tls.Config
+	endpoint       string
+	domain         string
+	base           string
+	filterUser     string
+	filterMemberOf string
+	tls            *tls.Config
 }
 
 const (
-	filterUser          = "(&(objectClass=user)(sn=%s))"
-	filterMemberOf      = "(&(objectClass=group)(member=%s))"
-	filterUserAD        = "(&(objectClass=user)(sAMAccountName=%s))"
-	filterMemberOfAD    = "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=2147483648)(member=%s))"
-	filterMemberOfDistr = "(&(objectClass=group)(!(groupType:1.2.840.113556.1.4.803:=2147483648))(member=%s))"
+	filterUser       = "(&(objectClass=user)(sn=%s))"
+	filterMemberOf   = "(&(objectClass=group)(member=%s))"
+	filterUserAD     = "(&(objectClass=user)(sAMAccountName=%s))"
+	filterMemberOfAD = "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=2147483648)(member=%s))"
 )
 
 func (d *driver) SetTLS(tls *tls.Config) error {
@@ -49,11 +47,6 @@ func (d *driver) SetFilterUser(filter string) error {
 
 func (d *driver) SetFilterMemberOf(filter string) error {
 	d.filterMemberOf = filter
-	return nil
-}
-
-func (d *driver) SetFilterMemberOfDistr(filter string) error {
-	d.filterMemberOfDistr = filter
 	return nil
 }
 
@@ -85,8 +78,7 @@ func init() {
 		filterMemberOf: filterMemberOf,
 	})
 	auth.Register("ad", &driver{
-		filterUser:          filterUserAD,
-		filterMemberOf:      filterMemberOfAD,
-		filterMemberOfDistr: filterMemberOfDistr,
+		filterUser:     filterUserAD,
+		filterMemberOf: filterMemberOfAD,
 	})
 }
