@@ -29,6 +29,30 @@ func (j *JWT) PublicKey() rsa.PublicKey {
 	return *j.publicKey
 }
 
+func (j *JWT) SetPrivateKey(b []byte) error {
+	j.privateKeyPEM = b
+
+	k, err := jwt.ParseRSAPrivateKeyFromPEM(b)
+	if err != nil {
+		return errors.Wrap(err, "parse rsa private key")
+	}
+	j.privateKey = k
+
+	return nil
+}
+
+func (j *JWT) SetPublicKey(b []byte) error {
+	j.publicKeyPEM = b
+
+	k, err := jwt.ParseRSAPublicKeyFromPEM(b)
+	if err != nil {
+		return errors.Wrap(err, "parse rsa public key")
+	}
+	j.publicKey = k
+
+	return nil
+}
+
 func (j *JWT) LoadPrivateKey(fn string) error {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {

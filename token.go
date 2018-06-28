@@ -11,6 +11,9 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 )
 
 type Sign *jwt.SigningMethodRSA
@@ -138,4 +141,33 @@ func (j *JWT) Authorized(handler http.Handler, perms ...PermFn) http.Handler {
 	}
 
 	return http.HandlerFunc(fn)
+}
+
+func (j *JWT) GrpcParseTokenContext(ctx context.Context) (*Token, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no authorization header")
+	}
+
+	t, ok := md["authorization"]
+	if !ok {
+		return nil, grpc.Errorf(codes.Unauthenticated, "no authorization header")
+	}
+
+	return j.ParseToken(t[0])
+}
+
+func (j *JWT) GrpcAuthorized(ctx context.Context, perms ...PermFn) (*User, error) {
+	t, err := j.GrpcParseTokenContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, perm := range perms {
+		if err := perm(t.Claims.(*Claims)); err != nil {
+			return nil, err
+		}
+	}
+
+	return t.Claims.(*Claims).User, nil
 }
