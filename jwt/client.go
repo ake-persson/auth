@@ -2,13 +2,13 @@ package jwt
 
 import (
 	"crypto/rsa"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,6 +18,52 @@ import (
 type JWTClient struct {
 	publicKeyPEM []byte
 	publicKey    *rsa.PublicKey
+}
+
+type JWTClientOption func(*JWTClient) error
+
+func NewJWTClient(options ...JWTClientOption) (*JWTClient, error) {
+	j := &JWTClient{}
+
+	for _, option := range options {
+		if err := option(j); err != nil {
+			return nil, err
+		}
+	}
+
+	return j, nil
+}
+
+func (j *JWTClient) setPublicKey(b []byte) error {
+	j.publicKeyPEM = b
+
+	k, err := jwt.ParseRSAPublicKeyFromPEM(b)
+	if err != nil {
+		return errors.Wrap(err, "parse rsa public key")
+	}
+	j.publicKey = k
+
+	return nil
+}
+
+func (j *JWTClient) loadPublicKey(fn string) error {
+	b, err := ioutil.ReadFile(fn)
+	if err != nil {
+		return errors.Wrapf(err, "read file: %s", fn)
+	}
+	return j.setPublicKey(b)
+}
+
+func WithRSAKey(publicKey []byte) JWTClientOption {
+	return func(j *JWTClient) error {
+		return j.setPublicKey(publicKey)
+	}
+}
+
+func WithLoadRSAKey(publicKeyFile string) JWTClientOption {
+	return func(j *JWTClient) error {
+		return j.loadPublicKey(publicKeyFile)
+	}
 }
 
 func (j *JWTClient) ParseToken(token string) (*Token, error) {
