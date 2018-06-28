@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"github.com/dgrijalva/jwt-go"
+	"github.com/mickep76/auth"
 )
 
 type SigningAlgo *jwt.SigningMethodRSA
@@ -20,5 +21,6 @@ type Token struct {
 
 type Claims struct {
 	*jwt.StandardClaims
+	*auth.User
 	Renewed int `json:"renewed"`
 }

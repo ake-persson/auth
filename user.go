@@ -15,5 +15,4 @@ type User struct {
 	Groups     []string `json:"-"` // `json:"groups"`
 	DistrLists []string `json:"-"` // `json:"distrLists"`
 	Roles      []string `json:"roles,omitempty"`
-	Renewed    int      `json:"renewed"`
 }

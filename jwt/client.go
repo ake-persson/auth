@@ -104,3 +104,27 @@ func (j *JWTClient) ParseTokenContext(ctx context.Context) (*Token, error) {
 	}
 	return j.ParseToken(t[0])
 }
+
+func (j *JWTClient) Authorized(handler http.Handler, perms ...PermFunc) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		t, err := j.ParseTokenHeader(r)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		for _, perm := range perms {
+			if err := perm(t.Claims.(*Claims)); err != nil {
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write([]byte(err.Error()))
+				return
+			}
+		}
+
+		handler.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
+}
