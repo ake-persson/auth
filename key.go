@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"crypto/tls"
 	"io"
 	"io/ioutil"
@@ -12,11 +13,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+func (j *JWT) PrivateKeyPEM() []byte {
+	return j.privateKeyPEM
+}
+
+func (j *JWT) PublicKeyPEM() []byte {
+	return j.publicKeyPEM
+}
+
+func (j *JWT) PrivateKey() rsa.PrivateKey {
+	return *j.privateKey
+}
+
+func (j *JWT) PublicKey() rsa.PublicKey {
+	return *j.publicKey
+}
+
 func (j *JWT) LoadPrivateKey(fn string) error {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
 		return errors.Wrapf(err, "read file: %s", fn)
 	}
+	j.privateKeyPEM = b
 
 	k, err := jwt.ParseRSAPrivateKeyFromPEM(b)
 	if err != nil {
@@ -32,6 +50,7 @@ func (j *JWT) LoadPublicKey(fn string) error {
 	if err != nil {
 		return errors.Wrapf(err, "read file: %s", fn)
 	}
+	j.publicKeyPEM = b
 
 	k, err := jwt.ParseRSAPublicKeyFromPEM(b)
 	if err != nil {

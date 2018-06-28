@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/net/context"
 )
 
 type Sign *jwt.SigningMethodRSA
@@ -23,11 +24,13 @@ var (
 )
 
 type JWT struct {
-	sign       Sign
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
-	expiration time.Duration
-	skew       time.Duration
+	sign          Sign
+	privateKeyPEM []byte
+	publicKeyPEM  []byte
+	privateKey    *rsa.PrivateKey
+	publicKey     *rsa.PublicKey
+	expiration    time.Duration
+	skew          time.Duration
 }
 
 type Token struct {
