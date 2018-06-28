@@ -14,11 +14,12 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/mickep76/auth"
+	"github.com/mickep76/auth/jwt"
 	_ "github.com/mickep76/auth/ldap"
 )
 
 type Handler struct {
-	jwt  *auth.JWT
+	jwt  *jwt.JWTServer
 	conn auth.Conn
 }
 
@@ -27,17 +28,18 @@ type Login struct {
 	Password string `json:"password"`
 }
 
-var setOperPolicy = auth.PolicyFn(func(c *auth.Claims) {
-	c.Roles = []string{"operator"}
+var setOperPolicy = jwt.PolicyFunc(func(c *jwt.Claims) {
+	//	c.Roles = []string{"operator"}
 })
 
-var isAdminPerm = auth.PermFn(func(c *auth.Claims) error {
-	for _, r := range c.Roles {
-		if r == "admin" {
-			return nil
+var isAdminPerm = jwt.PermFunc(func(c *jwt.Claims) error {
+	/*
+		for _, r := range c.Roles {
+			if r == "admin" {
+				return nil
+			}
 		}
-	}
-
+	*/
 	return errors.New("need to be admin")
 })
 
@@ -61,7 +63,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := h.jwt.NewToken(u, setOperPolicy).Sign()
+	t := h.jwt.NewToken(u, setOperPolicy())
+	s, err := h.jwt.SignToken(t)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -81,7 +84,8 @@ func (h *Handler) Renew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := t.Renew().Sign()
+	h.jwt.RenewToken(t)
+	s, err := h.jwt.SignToken(t)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -137,14 +141,14 @@ func main() {
 	}
 
 	// Create new auth connection.
-	c, err := auth.Open(*backend, []string{*server}, auth.TLS(cfg), auth.Domain(*domain), auth.Base(*base))
+	c, err := auth.Open(*backend, []string{*server}, auth.WithTLS(cfg), auth.WithDomain(*domain), auth.WithBase(*base))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer c.Close()
 
 	// Create JWT.
-	j := auth.NewJWT(auth.SignRS512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
+	j := jwt.NewJWTServer(jwt.RS512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
 
 	// Load RSA private key.
 	if err := j.LoadPrivateKey(*privKey); err != nil {
