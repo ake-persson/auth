@@ -27,44 +27,32 @@ func Open(driver string, endpoints []string, options ...DriverOption) (Conn, err
 	return d.Open(endpoints)
 }
 
-func TLS(tls *tls.Config) DriverOption {
+func WithTLS(tls *tls.Config) DriverOption {
 	return func(d Driver) error {
 		return d.SetTLS(tls)
 	}
 }
 
-func DefaultTLS() DriverOption {
-	return func(d Driver) error {
-		return d.SetTLS(&tls.Config{})
-	}
-}
-
-func Domain(domain string) DriverOption {
+func WithDomain(domain string) DriverOption {
 	return func(d Driver) error {
 		return d.SetDomain(domain)
 	}
 }
 
-func Base(base string) DriverOption {
+func WithBase(base string) DriverOption {
 	return func(d Driver) error {
 		return d.SetBase(base)
 	}
 }
 
-func FilterUser(filter string) DriverOption {
+func WithFilterUser(filter string) DriverOption {
 	return func(d Driver) error {
 		return d.SetFilterUser(filter)
 	}
 }
 
-func FilterMemberOf(filter string) DriverOption {
+func WithFilterMemberOf(filter string) DriverOption {
 	return func(d Driver) error {
 		return d.SetFilterMemberOf(filter)
-	}
-}
-
-func FilterMemberOfDistr(filter string) DriverOption {
-	return func(d Driver) error {
-		return d.SetFilterMemberOfDistr(filter)
 	}
 }
