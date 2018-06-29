@@ -65,6 +65,14 @@ func (j *JWTServer) NewToken(u *auth.User, policies ...PolicyFunc) *Token {
 	return t
 }
 
+func (j *JWTServer) PrivateKeyPEM() []byte {
+	return j.privateKeyPEM
+}
+
+func (j *JWTServer) PrivateKey() *rsa.PrivateKey {
+	return j.privateKey
+}
+
 func (j *JWTServer) setPrivateKey(b []byte) error {
 	j.privateKeyPEM = b
 

@@ -34,6 +34,14 @@ func NewJWTClient(options ...JWTClientOption) (*JWTClient, error) {
 	return j, nil
 }
 
+func (j *JWTClient) PublicKeyPEM() []byte {
+	return j.publicKeyPEM
+}
+
+func (j *JWTClient) PublicKey() *rsa.PublicKey {
+	return j.publicKey
+}
+
 func (j *JWTClient) setPublicKey(b []byte) error {
 	j.publicKeyPEM = b
 
@@ -105,7 +113,16 @@ func (j *JWTClient) ParseTokenContext(ctx context.Context) (*Token, error) {
 	return j.ParseToken(t[0])
 }
 
-func (j *JWTClient) Authorized(handler http.Handler, perms ...PermFunc) http.Handler {
+func (j *JWTClient) Authorized(t *Token, perms ...PermFunc) error {
+	for _, perm := range perms {
+		if err := perm(t.Claims.(*Claims)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (j *JWTClient) AuthorizedHandler(handler http.Handler, perms ...PermFunc) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		t, err := j.ParseTokenHeader(r)
 		if err != nil {
@@ -127,4 +144,18 @@ func (j *JWTClient) Authorized(handler http.Handler, perms ...PermFunc) http.Han
 		handler.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
+}
+
+func (j *JWTClient) AuthorizedGrpc(ctx context.Context, perms ...PermFunc) error {
+	t, err := j.ParseTokenContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, perm := range perms {
+		if err := perm(t.Claims.(*Claims)); err != nil {
+			return grpc.Errorf(codes.Unauthenticated, err.Error())
+		}
+	}
+	return nil
 }

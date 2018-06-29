@@ -163,7 +163,7 @@ func main() {
 	router.HandleFunc("/login", h.Login).Methods("POST")
 	router.HandleFunc("/renew", h.Renew).Methods("GET")
 	router.HandleFunc("/verify", h.Verify).Methods("GET")
-	router.Handle("/admin", j.Authorized(http.HandlerFunc(h.Admin), isAdminPerm)).Methods("GET")
+	router.Handle("/admin", j.AuthorizedHandler(http.HandlerFunc(h.Admin), isAdminPerm)).Methods("GET")
 
 	logr := handlers.LoggingHandler(os.Stdout, router)
 	if err := http.ListenAndServeTLS(*bind, *cert, *key, logr); err != nil {
