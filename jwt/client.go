@@ -54,13 +54,13 @@ func (j *JWTClient) loadPublicKey(fn string) error {
 	return j.setPublicKey(b)
 }
 
-func WithRSAKey(publicKey []byte) JWTClientOption {
+func WithPublicKey(publicKey []byte) JWTClientOption {
 	return func(j *JWTClient) error {
 		return j.setPublicKey(publicKey)
 	}
 }
 
-func WithLoadRSAKey(publicKeyFile string) JWTClientOption {
+func WithLoadPublicKey(publicKeyFile string) JWTClientOption {
 	return func(j *JWTClient) error {
 		return j.loadPublicKey(publicKeyFile)
 	}

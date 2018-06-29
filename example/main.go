@@ -29,17 +29,15 @@ type Login struct {
 }
 
 var setOperPolicy = jwt.PolicyFunc(func(c *jwt.Claims) {
-	//	c.Roles = []string{"operator"}
+	c.Roles = []string{"operator"}
 })
 
 var isAdminPerm = jwt.PermFunc(func(c *jwt.Claims) error {
-	/*
-		for _, r := range c.Roles {
-			if r == "admin" {
-				return nil
-			}
+	for _, r := range c.Roles {
+		if r == "admin" {
+			return nil
 		}
-	*/
+	}
 	return errors.New("need to be admin")
 })
 
@@ -63,7 +61,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t := h.jwt.NewToken(u, setOperPolicy())
+	t := h.jwt.NewToken(u, setOperPolicy)
 	s, err := h.jwt.SignToken(t)
 	if err != nil {
 		writeError(w, err)
@@ -148,15 +146,8 @@ func main() {
 	defer c.Close()
 
 	// Create JWT.
-	j := jwt.NewJWTServer(jwt.RS512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute)
-
-	// Load RSA private key.
-	if err := j.LoadPrivateKey(*privKey); err != nil {
-		log.Fatal(err)
-	}
-
-	// Load RSA public key.
-	if err := j.LoadPublicKey(*pubKey); err != nil {
+	j, err := jwt.NewJWTServer(jwt.RS512, time.Duration(24)*time.Hour, time.Duration(5)*time.Minute, jwt.WithLoadKeys(*privKey, *pubKey))
+	if err != nil {
 		log.Fatal(err)
 	}
 
