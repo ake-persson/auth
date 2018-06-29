@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -72,6 +74,18 @@ func WithLoadPublicKey(publicKeyFile string) JWTClientOption {
 	return func(j *JWTClient) error {
 		return j.loadPublicKey(publicKeyFile)
 	}
+}
+
+func LoadSignedToken(tokenFile string) (*Token, error) {
+	if strings.HasPrefix(tokenFile, "~") {
+		tokenFile = filepath.Join(os.Getenv("HOME"), strings.TrimPrefix(tokenFile, "~"))
+	}
+
+	b, err := ioutil.ReadFile(tokenFile)
+	if err != nil {
+		return nil, err
+	}
+	return &Token{SignedToken: string(b)}, nil
 }
 
 func (j *JWTClient) ParseToken(token string) (*Token, error) {
