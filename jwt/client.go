@@ -81,7 +81,7 @@ func (j *JWTClient) ParseToken(token string) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Token{t}, nil
+	return &Token{Token: t}, nil
 }
 
 func (j *JWTClient) ParseTokenReader(reader io.ReadCloser) (*Token, error) {
@@ -158,4 +158,14 @@ func (j *JWTClient) AuthorizedGrpc(ctx context.Context, perms ...PermFunc) error
 		}
 	}
 	return nil
+}
+
+func (t *Token) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+	return map[string]string{
+		"authorization": t.SignedToken,
+	}, nil
+}
+
+func (t *Token) RequireTransportSecurity() bool {
+	return true
 }

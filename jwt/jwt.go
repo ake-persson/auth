@@ -16,6 +16,7 @@ var (
 )
 
 type Token struct {
+	SignedToken string
 	*jwt.Token
 }
 
