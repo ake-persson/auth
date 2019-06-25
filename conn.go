@@ -45,6 +45,12 @@ func WithBase(base string) DriverOption {
 	}
 }
 
+func WithOU(ou string) DriverOption {
+	return func(d Driver) error {
+		return d.SetOU(ou)
+	}
+}
+
 func WithFilterUser(filter string) DriverOption {
 	return func(d Driver) error {
 		return d.SetFilterUser(filter)

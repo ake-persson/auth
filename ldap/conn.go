@@ -25,8 +25,11 @@ const (
 
 func (c *conn) Login(user string, pass string) (*auth.User, error) {
 	loginUser := user
-	if c.domain != "" {
+
+	if c.driver.name == "ad" && c.domain != "" {
 		loginUser = fmt.Sprintf("%s\\%s", c.domain, user)
+	} else if c.driver.name == "ldap" {
+		loginUser = fmt.Sprintf("uid=%s,%s,%s", user, c.ou, c.base)
 	}
 
 	if err := c.Bind(loginUser, pass); err != nil {

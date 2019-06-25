@@ -10,17 +10,19 @@ import (
 )
 
 type driver struct {
+	name           string
 	endpoint       string
 	domain         string
 	base           string
+	ou             string
 	filterUser     string
 	filterMemberOf string
 	tls            *tls.Config
 }
 
 const (
-	filterUser       = "(&(objectClass=user)(sn=%s))"
-	filterMemberOf   = "(&(objectClass=group)(member=%s))"
+	filterUser       = "(&(objectClass=account)(uid=%s))"
+	filterMemberOf   = "(&(objectClass=posixGroup)(member=%s))"
 	filterUserAD     = "(&(objectClass=user)(sAMAccountName=%s))"
 	filterMemberOfAD = "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=2147483648)(member=%s))"
 )
@@ -37,6 +39,11 @@ func (d *driver) SetDomain(domain string) error {
 
 func (d *driver) SetBase(base string) error {
 	d.base = base
+	return nil
+}
+
+func (d *driver) SetOU(ou string) error {
+	d.ou = ou
 	return nil
 }
 
@@ -74,10 +81,12 @@ func (d *driver) Open(endpoints []string) (auth.Conn, error) {
 
 func init() {
 	auth.Register("ldap", &driver{
+		name:           "ldap",
 		filterUser:     filterUser,
 		filterMemberOf: filterMemberOf,
 	})
 	auth.Register("ad", &driver{
+		name:           "ad",
 		filterUser:     filterUserAD,
 		filterMemberOf: filterMemberOfAD,
 	})
